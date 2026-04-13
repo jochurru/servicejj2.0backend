@@ -14,12 +14,12 @@ const getPedidos = async (req, res) => {
     }
 };
 
-// 2. CREATE - Crear un nuevo pedido con Imágenes en Cloudinary
+// 2. CREATE - Crear un nuevo pedido con Imágenes en Cloudinary (ACTUALIZADO)
 const createPedido = async (req, res) => {
     try {
-        // Desestructuramos el body (Multer ya procesó el FormData)
-        const { nombre, equipo, modelo, falla, telefono, email } = req.body;
-        const archivos = req.files; // Aquí llegan las fotos gracias a Multer
+        // AGREGAMOS 'clienteId' a la desestructuración
+        const { nombre, equipo, modelo, falla, telefono, email, clienteId } = req.body;
+        const archivos = req.files; 
 
         // Validación de campos obligatorios
         if (!nombre || !equipo || !falla || !telefono) {
@@ -31,22 +31,19 @@ const createPedido = async (req, res) => {
 
         // --- LÓGICA DE CLOUDINARY ---
         let fotosUrls = [];
-
         if (archivos && archivos.length > 0) {
-            // Subimos todas las fotos en paralelo para ganar velocidad
             const uploadPromises = archivos.map(file => 
                 cloudinary.uploader.upload(file.path, {
-                    folder: 'service-jj-pedidos', // Se crea automáticamente en Cloudinary
+                    folder: 'service-jj-pedidos',
                     resource_type: 'auto'
                 })
             );
 
             const results = await Promise.all(uploadPromises);
-            // Mapeamos solo la URL segura de cada imagen
             fotosUrls = results.map(result => result.secure_url);
         }
 
-        // Generación de ID Relacional (AAAAMMDDHHMMSS)
+        // Generación de ID Relacional
         const ahora = new Date();
         const idRelacional = ahora.getFullYear().toString() +
                             (ahora.getMonth() + 1).toString().padStart(2, '0') +
@@ -63,7 +60,8 @@ const createPedido = async (req, res) => {
             falla: falla.trim().substring(0, 500),
             telefono: telefono.trim(),
             email: email ? email.trim() : "No provisto",
-            fotos: fotosUrls, // <--- AQUÍ se guardan los links de Cloudinary
+            clienteId: clienteId || null, // <--- CLAVE: Guardamos el ID que viene del Front
+            fotos: fotosUrls,
             estado: 'pendiente',
             fechaCreacion: ahora
         };
