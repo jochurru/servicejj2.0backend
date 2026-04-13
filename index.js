@@ -9,7 +9,7 @@ const app = express();
 
 // --- MIDDLEWARES GLOBALES ---
 app.use(cors());
-app.use(express.json({ limit: '10kb' })); 
+app.use(express.json({ limit: '50kb' })); 
 
 // 2. CONFIGURACIÓN DEL LIMITADOR
 const limiter = rateLimit({
