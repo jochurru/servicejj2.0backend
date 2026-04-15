@@ -7,10 +7,12 @@ const upload = require('../middleware/upload');    // El "portero" de archivos (
 // --- RUTAS PÚBLICAS ---
 // GET: Para que el sistema (o vos) pueda listar los pedidos
 router.get('/', pedidosController.getPedidos);
+// Nueva ruta para vincular pedidos cuando el cliente se loguea
+router.post('/reclamar', upload.none(), pedidosController.reclamarPedidos);
 
 // --- RUTAS PROTEGIDAS ---
 
-/**
+/** 
  * POST: Crear pedido
  * 1. Validamos la API Key
  * 2. Multer procesa las fotos (máximo 5) y las deja en req.files

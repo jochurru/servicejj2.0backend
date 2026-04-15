@@ -17,62 +17,70 @@ const getPedidos = async (req, res) => {
 // 2. CREATE - Crear un nuevo pedido con Imágenes en Cloudinary (ACTUALIZADO)
 const createPedido = async (req, res) => {
     try {
-        // AGREGAMOS 'clienteId' a la desestructuración
         const { nombre, equipo, modelo, falla, telefono, email, clienteId } = req.body;
         const archivos = req.files; 
 
-        // Validación de campos obligatorios
+        // 1. Validación (Sanitización básica)
         if (!nombre || !equipo || !falla || !telefono) {
-            return res.status(400).json({ 
-                success: false, 
-                mensaje: "Error: Nombre, Equipo, Falla y WhatsApp son obligatorios." 
-            });
+            return res.status(400).json({ success: false, mensaje: "Faltan campos obligatorios." });
         }
 
-        // --- LÓGICA DE CLOUDINARY ---
+        // 2. Lógica de Cloudinary (Ya la tenías perfecta)
         let fotosUrls = [];
         if (archivos && archivos.length > 0) {
             const uploadPromises = archivos.map(file => 
-                cloudinary.uploader.upload(file.path, {
-                    folder: 'service-jj-pedidos',
-                    resource_type: 'auto'
-                })
+                cloudinary.uploader.upload(file.path, { folder: 'service-jj-pedidos' })
             );
-
             const results = await Promise.all(uploadPromises);
             fotosUrls = results.map(result => result.secure_url);
         }
 
-        // Generación de ID Relacional
+        // 3. Generación de IDs
         const ahora = new Date();
-        const idRelacional = ahora.getFullYear().toString() +
-                            (ahora.getMonth() + 1).toString().padStart(2, '0') +
-                            ahora.getDate().toString().padStart(2, '0') +
-                            ahora.getHours().toString().padStart(2, '0') +
-                            ahora.getMinutes().toString().padStart(2, '0') +
-                            ahora.getSeconds().toString().padStart(2, '0');
+        const idRelacional = ahora.getFullYear().toString() + (ahora.getMonth() + 1).toString().padStart(2, '0') + ahora.getDate().toString().padStart(2, '0') + ahora.getHours().toString().padStart(2, '0') + ahora.getMinutes().toString().padStart(2, '0') + ahora.getSeconds().toString().padStart(2, '0');
+        
+        // El ID Corto para el humano [cite: 617]
+        const idCorto = `SJ-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
-        const nuevoPedido = {
+        // --- 🚀 INICIO DE DOBLE ESCRITURA ATÓMICA --- 
+        const batch = db.batch();
+
+        // Referencia 1: El Búnker (Privado)
+        const refPrivada = db.collection('pedidos').doc(idRelacional);
+        batch.set(refPrivada, {
             pedidoId: parseInt(idRelacional),
-            nombre: nombre.trim().substring(0, 50),
-            equipo: equipo.trim().substring(0, 50),
-            modelo: modelo ? modelo.trim().substring(0, 50) : "No provisto",
-            falla: falla.trim().substring(0, 500),
+            idCorto,
+            nombre: nombre.trim(),
+            equipo: equipo.trim(),
+            modelo: modelo || "No provisto",
+            falla: falla.trim(),
             telefono: telefono.trim(),
-            email: email ? email.trim() : "No provisto",
-            clienteId: clienteId || null, // <--- CLAVE: Guardamos el ID que viene del Front
+            email: email || "No provisto",
+            clienteId: (clienteId && clienteId !== "null") ? clienteId : null,
             fotos: fotosUrls,
             estado: 'pendiente',
             fechaCreacion: ahora
-        };
+        });
 
-        // Guardamos en Firestore
-        await db.collection('pedidos').doc(idRelacional).set(nuevoPedido);
+        // Referencia 2: La Vidriera (Pública para el QR) [cite: 235]
+        const refPublica = db.collection('seguimiento').doc(idRelacional);
+        batch.set(refPublica, {
+            idCorto,
+            equipo: `${equipo} ${modelo || ""}`.trim(),
+            falla: falla.trim(),
+            estado: 'pendiente',
+            actualizado: ahora
+            // No mandamos teléfono ni nombre por seguridad [cite: 206]
+        });
+
+        await batch.commit(); // Se guardan ambos o ninguno [cite: 302]
+        // --- FIN DE DOBLE ESCRITURA ---
 
         res.status(201).json({ 
             success: true, 
             id: idRelacional,
-            mensaje: "Pedido registrado con éxito en la nube." 
+            ticket: idCorto,
+            mensaje: "Pedido registrado y sincronizado en la nube Google." 
         });
 
     } catch (error) {
@@ -109,5 +117,45 @@ const deletePedido = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+// 5. RECLAMAR PEDIDOS (Vinculación diferida por Email)
+const reclamarPedidos = async (req, res) => {
+    try {
+        const emailRecibido = req.body.email.trim().toLowerCase();
+        
+        const clienteId = req.body.clienteId || req.body.clienteId || null; 
 
-module.exports = { getPedidos, createPedido, updatePedido, deletePedido };
+
+        const snapshot = await db.collection('pedidos')
+                                .where('email', '==', emailRecibido)
+                                .get();
+
+        if (snapshot.empty) {
+            return res.json({ 
+                success: false, 
+                mensaje: `No existe ningún pedido registrado con el mail: ${emailRecibido}` 
+            });
+        }
+
+        const batch = db.batch();
+        let vinculados = 0;
+
+        snapshot.docs.forEach(doc => {
+            const docRef = doc.ref;
+
+
+            batch.set(docRef, { 
+                clienteId: clienteId 
+            }, { merge: true });
+
+            vinculados++;
+        });
+
+        await batch.commit();
+        res.json({ success: true, mensaje: `¡Éxito! Se vincularon ${vinculados} pedido(s).` });
+
+    } catch (error) {
+        // Este es el error que te saltó recién
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+module.exports = { getPedidos, createPedido, updatePedido, deletePedido, reclamarPedidos};  
