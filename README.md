@@ -191,7 +191,6 @@ x-api-key: <API_KEY_SECRET>
 - Seguimiento y reclamo no usan API key; no exponen datos internos del taller.
 - CORS restringido al origen del frontend (`CORS_ORIGIN` o localhost por defecto).
 - Límite de tamaño JSON: 50 KB.
-- No subas `.env` ni credenciales JSON de Firebase al repositorio.
 
 ---
 
