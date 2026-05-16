@@ -53,6 +53,13 @@ function buildUpdateWithNota(nuevaNota, estado) {
     };
 }
 
+async function updateQrUrl(id, qrUrl, qrContenido) {
+    await db.collection(COLLECTION).doc(id).update({
+        qrUrl,
+        qrContenido: qrContenido || null,
+    });
+}
+
 async function linkClienteIdToDocs(docs, clienteId) {
     const batch = db.batch();
     docs.forEach((doc) => {
@@ -66,6 +73,7 @@ module.exports = {
     findAllOrdered,
     findByEmail,
     findByIdCorto,
+    updateQrUrl,
     setInBatch,
     updateInBatch,
     deleteInBatch,

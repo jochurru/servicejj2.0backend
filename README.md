@@ -13,7 +13,7 @@ API REST en **Node.js** y **Express 5** para la gestión de pedidos de taller de
 - Tickets cortos con prefijo `SJ-` para consulta y QR.
 - **Reclamo de pedidos** por email (vinculación con `clienteId` de Firebase Auth).
 - Seguimiento **público** sin API key (solo datos de estado, no datos sensibles del taller).
-- Rate limiting, CORS configurable y middleware de errores centralizado.
+- CORS configurable y middleware de errores centralizado.
 - Autenticación de rutas administrativas mediante header `x-api-key`.
 
 ---
@@ -26,7 +26,7 @@ API REST en **Node.js** y **Express 5** para la gestión de pedidos de taller de
 | Framework  | Express 5         |
 | Base datos | Firestore (Admin SDK) |
 | Archivos   | Cloudinary, Multer, Sharp |
-| Seguridad  | express-rate-limit, API key |
+| Seguridad  | API key (alta pública), Firebase Bearer (admin) |
 | Config     | dotenv            |
 
 ---

@@ -1,9 +1,11 @@
 const ESTADOS = ['pendiente', 'en reparación', 'listo', 'entregado', 'cancelado'];
 
-function buildPedidoPayload({ pedidoId, idCorto, dto, fotosUrls, fechaCreacion }) {
+function buildPedidoPayload({ pedidoId, idCorto, dto, fotosUrls, fechaCreacion, qrUrl, qrContenido }) {
     return {
         pedidoId,
         idCorto,
+        qrUrl: qrUrl || null,
+        qrContenido: qrContenido || null,
         nombre: dto.nombre.trim(),
         equipo: dto.equipo.trim(),
         modelo: dto.modelo || 'No provisto',

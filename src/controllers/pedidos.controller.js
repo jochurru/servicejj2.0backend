@@ -1,5 +1,8 @@
 const pedidosService = require('../services/pedidos.service');
 const seguimientoService = require('../services/seguimiento.service');
+const qrService = require('../services/qr.service');
+const storage = require('../storage');
+const { generatePedidoId, generateIdCorto } = require('../domain/id-generator');
 const { parseCreatePedido } = require('../dto/create-pedido.dto');
 const { parseUpdatePedido } = require('../dto/update-pedido.dto');
 const { parseReclamarPedidos } = require('../dto/reclamar-pedidos.dto');
@@ -19,13 +22,33 @@ const getPedidoByTicket = asyncHandler(async (req, res) => {
 
 const createPedido = asyncHandler(async (req, res) => {
     const dto = parseCreatePedido(req.body);
-    const result = await pedidosService.create(dto, req.files);
+    const files = req.files || [];
+
+    const fechaCreacion = new Date();
+    const pedidoId = generatePedidoId(fechaCreacion);
+    const idCortoRaw = generateIdCorto();
+
+    const { qrUrl, qrContenido, idCorto } = await qrService.generateAndUpload(idCortoRaw);
+
+    const fotosUrls = await storage.uploadMany(files);
+
+    const result = await pedidosService.persistNewPedido({
+        pedidoId,
+        idCorto,
+        dto,
+        fotosUrls,
+        fechaCreacion,
+        qrUrl,
+        qrContenido,
+    });
 
     res.status(201).json({
         success: true,
         id: result.id,
         idCorto: result.idCorto,
-        mensaje: result.mensaje
+        qrUrl: result.qrUrl,
+        qrContenido: result.qrContenido,
+        mensaje: result.mensaje,
     });
 });
 

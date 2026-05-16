@@ -1,11 +1,12 @@
-function buildSeguimientoPayload({ idCorto, dto, fecha }) {
+function buildSeguimientoPayload({ idCorto, dto, fecha, qrUrl, qrContenido }) {
     return {
         idCorto,
+        qrUrl: qrUrl || null,
+        qrContenido: qrContenido || null,
         equipo: `${dto.equipo} ${dto.modelo || ''}`.trim(),
         falla: dto.falla.trim(),
         estado: 'pendiente',
-        actualizado: fecha
+        actualizado: fecha,
     };
 }
-
 module.exports = { buildSeguimientoPayload };

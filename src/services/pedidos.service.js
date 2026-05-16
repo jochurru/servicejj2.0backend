@@ -1,14 +1,36 @@
-const { generatePedidoId, generateIdCorto, normalizeTicket } = require('../domain/id-generator');
+const { normalizeTicket } = require('../domain/id-generator');
 const { NotFoundError, ValidationError } = require('../domain/errors');
 const { buildPedidoPayload } = require('../domain/pedido.entity');
 const { buildSeguimientoPayload } = require('../domain/seguimiento.entity');
 const pedidosRepository = require('../repositories/pedidos.repository');
 const seguimientoRepository = require('../repositories/seguimiento.repository');
 const { createBatch, commitBatch } = require('../repositories/batch.helper');
-const storage = require('../storage');
+const qrService = require('./qr.service');
+
+async function ensureQrUrl(pedido) {
+    if (!pedido || pedido.qrUrl) {
+        return pedido;
+    }
+
+    const ticket = normalizeTicket(pedido.idCorto || pedido.id);
+    const { qrUrl, qrContenido } = await qrService.generateAndUpload(ticket);
+
+    await pedidosRepository.updateQrUrl(pedido.id, qrUrl, qrContenido);
+    await seguimientoRepository.updateQrUrl(pedido.id, qrUrl, qrContenido).catch(() => {});
+
+    return { ...pedido, qrUrl, qrContenido, idCorto: ticket };
+}
 
 async function listAll() {
-    return pedidosRepository.findAllOrdered();
+    const pedidos = await pedidosRepository.findAllOrdered();
+    const result = [];
+    const batchSize = 2;
+    for (let i = 0; i < pedidos.length; i += batchSize) {
+        const slice = pedidos.slice(i, i + batchSize);
+        const done = await Promise.all(slice.map((p) => ensureQrUrl(p)));
+        result.push(...done);
+    }
+    return result;
 }
 
 async function findByTicket(idCorto) {
@@ -19,23 +41,37 @@ async function findByTicket(idCorto) {
         throw new NotFoundError('Pedido no encontrado');
     }
 
-    return pedido;
+    return ensureQrUrl(pedido);
 }
 
-async function create(dto, files) {
-    const fotosUrls = await storage.uploadMany(files);
-    const fechaCreacion = new Date();
-    const pedidoId = generatePedidoId(fechaCreacion);
-    const idCorto = generateIdCorto();
-
+/**
+ * Persiste pedido + seguimiento en Firestore. Llamar solo después de que el QR esté en Cloudinary.
+ */
+async function persistNewPedido({
+    pedidoId,
+    idCorto,
+    dto,
+    fotosUrls,
+    fechaCreacion,
+    qrUrl,
+    qrContenido,
+}) {
     const pedido = buildPedidoPayload({
         pedidoId,
         idCorto,
         dto,
         fotosUrls,
-        fechaCreacion
+        fechaCreacion,
+        qrUrl,
+        qrContenido,
     });
-    const seguimiento = buildSeguimientoPayload({ idCorto, dto, fecha: fechaCreacion });
+    const seguimiento = buildSeguimientoPayload({
+        idCorto,
+        dto,
+        fecha: fechaCreacion,
+        qrUrl,
+        qrContenido,
+    });
 
     const batch = createBatch();
     pedidosRepository.setInBatch(batch, pedidoId, pedido);
@@ -45,7 +81,9 @@ async function create(dto, files) {
     return {
         id: pedidoId,
         idCorto,
-        mensaje: 'Pedido registrado y sincronizado con éxito.'
+        qrUrl,
+        qrContenido,
+        mensaje: 'Pedido registrado y sincronizado con éxito.',
     };
 }
 
@@ -109,8 +147,16 @@ async function reclamar(dto) {
 
     return {
         success: true,
-        message: `Se vincularon ${count} pedidos.`
+        message: `Se vincularon ${count} pedidos.`,
     };
 }
 
-module.exports = { listAll, findByTicket, create, update, remove, reclamar };
+module.exports = {
+    listAll,
+    findByTicket,
+    persistNewPedido,
+    update,
+    remove,
+    reclamar,
+    ensureQrUrl,
+};

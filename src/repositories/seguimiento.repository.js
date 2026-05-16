@@ -15,7 +15,10 @@ async function findByIdCorto(idCorto) {
         return null;
     }
 
-    return snapshot.docs[0].data();
+    const doc = snapshot.docs[0];
+    const raw = doc.data() || {};
+    const { id: _ignoredId, ...rest } = raw;
+    return { ...rest, id: doc.id };
 }
 
 function setInBatch(batch, id, data) {
@@ -44,8 +47,17 @@ function deleteInBatch(batch, id) {
     batch.delete(ref);
 }
 
+async function updateQrUrl(id, qrUrl, qrContenido = null) {
+    const patch = { qrUrl };
+    if (qrContenido != null && qrContenido !== '') {
+        patch.qrContenido = qrContenido;
+    }
+    await db.collection(COLLECTION).doc(id).update(patch);
+}
+
 module.exports = {
     findByIdCorto,
+    updateQrUrl,
     setInBatch,
     updateEstadoInBatch,
     updateWithNotaInBatch,
