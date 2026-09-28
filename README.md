@@ -60,53 +60,78 @@ src/
 ├── routes/
 ├── services/
 └── storage/
-
-Responsabilidades principales
-- routes/: definición de endpoints
-- controllers/: manejo de requests y responses
-- services/: lógica de negocio
-- repositories/: acceso a Firestore
-- domain/: entidades y reglas del dominio
-- dto/: validación y normalización de datos
-- middleware/: autenticación, autorización y manejo de errores
-- storage/: integración con Cloudinary
-- config/: configuración de Firebase y servicios externos
 ```
-🔐Seguridad y acceso
+
+### Responsabilidades principales
+
+- `routes/`: definición de endpoints
+- `controllers/`: manejo de requests y responses
+- `services/`: lógica de negocio
+- `repositories/`: acceso a Firestore
+- `domain/`: entidades y reglas del dominio
+- `dto/`: validación y normalización de datos
+- `middleware/`: autenticación, autorización y manejo de errores
+- `storage/`: integración con Cloudinary
+- `config/`: configuración de Firebase y servicios externos
+
+---
+
+## 🔐 Seguridad y acceso
 
 El backend utiliza distintos niveles de acceso según el tipo de operación.
-Endpoints públicos
+
+### Endpoints públicos
+
 - Seguimiento de pedidos por ticket
 - Reclamo o vinculación de pedidos
-Creación de pedidos
+
+### Creación de pedidos
+
 La creación de pedidos utiliza una API key enviada mediante el header:
+
+```text
 x-api-key
-Administración
+```
+
+### Administración
+
 Las operaciones administrativas requieren:
+
 - autenticación mediante Firebase Auth
 - token Bearer válido
 - usuario registrado en Firestore
-- rol admin
+- rol `admin`
+
 Esto se aplica a operaciones como:
+
 - listar pedidos
 - buscar pedidos por ticket
 - actualizar pedidos
 - eliminar pedidos
 
-🌐 API principal
+---
+
+## 🌐 API principal
 
 Base path:
-/api/pedidos
-Endpoints
-Método	Ruta	Acceso	Descripción
-GET	/seguimiento/:idCorto	Público	Consulta el estado de un pedido
-POST	/reclamar	Público	Vincula pedidos con un usuario
-POST	/	API key	Crea un nuevo pedido
-GET	/ticket/:idCorto	Admin	Busca un pedido por ticket
-GET	/	Admin	Lista pedidos
-PUT	/:id	Admin	Actualiza un pedido
-DELETE	/:id	Admin	Elimina un pedido
 
+```text
+/api/pedidos
+```
+
+### Endpoints
+
+| Método | Ruta | Acceso | Descripción |
+|---|---|---|---|
+| GET | `/seguimiento/:idCorto` | Público | Consulta el estado de un pedido |
+| POST | `/reclamar` | Público | Vincula pedidos con un usuario |
+| POST | `/` | API key | Crea un nuevo pedido |
+| GET | `/ticket/:idCorto` | Admin | Busca un pedido por ticket |
+| GET | `/` | Admin | Lista pedidos |
+| PUT | `/:id` | Admin | Actualiza un pedido |
+| DELETE | `/:id` | Admin | Elimina un pedido |
+
+---
 ## 🖼️ Gestión de imágenes
 
 Los pedidos pueden incluir hasta 5 imágenes.
