@@ -107,24 +107,45 @@ GET	/	Admin	Lista pedidos
 PUT	/:id	Admin	Actualiza un pedido
 DELETE	/:id	Admin	Elimina un pedido
 
-
-🖼️ Gestión de imágenes
+## 🖼️ Gestión de imágenes
 
 Los pedidos pueden incluir hasta 5 imágenes.
+
 El flujo utiliza:
+
 - Multer para recepción de archivos
 - Sharp para procesamiento de imágenes
 - Cloudinary para almacenamiento
-🔥 Persistencia
-La aplicación utiliza Firestore mediante Firebase Admin SDK.
+
+---
+
+## 🔥 Persistencia
+
+La aplicación utiliza **Firestore** mediante Firebase Admin SDK.
+
 El acceso a datos está separado mediante repositories, manteniendo la lógica de negocio desacoplada de la base de datos.
-▶️ Ejecución local
-1. Instalar dependencias
+
+---
+
+## ▶️ Ejecución local
+
+### 1. Instalar dependencias
+
+```bash
 npm install
-2. Crear archivo .env
+```
+
+### 2. Crear archivo `.env`
+
 Tomar como referencia el archivo:
+
+```text
 .env.example
+```
+
 Variables principales:
+
+```env
 PORT=5000
 
 API_KEY_SECRET=
@@ -138,21 +159,44 @@ FB_PRIVATE_KEY=
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
+```
 
-3. Ejecutar el proyecto
+### 3. Ejecutar el proyecto
+
+```bash
 npm run dev
-o
+```
+
+o:
+
+```bash
 npm start
-🔗 Proyecto relacionado
-Frontend:
+```
+
+---
+
+## 🔗 Proyecto relacionado
+
+**Frontend:**  
 https://github.com/jochurru/servicejj2.0
-Aplicación:
+
+**Aplicación:**  
 https://servicejj.com.ar/
-📌 Estado del proyecto
+
+---
+
+## 📌 Estado del proyecto
+
 Proyecto funcional en evolución.
+
 El objetivo del backend es centralizar la gestión de pedidos de servicio técnico, mejorar la trazabilidad de cada equipo y ofrecer seguimiento tanto para clientes como para administradores.
-👨‍💻 Autor
-Jonatan Churruarin
-LinkedIn:
+
+---
+
+## 👨‍💻 Autor
+
+**Jonatan Churruarin**
+
+**LinkedIn:**  
 https://www.linkedin.com/in/jonatan-churruarin/
 
