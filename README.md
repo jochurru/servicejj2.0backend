@@ -1,223 +1,154 @@
 # Service JJ — Backend
 
-API REST en **Node.js** y **Express 5** para la gestión de pedidos de taller de Service JJ. Persistencia en **Firestore** (Firebase Admin), imágenes en **Cloudinary**, validación por capas y endpoints públicos de seguimiento.
+Backend de **Service JJ** desarrollado con Node.js y Express para gestionar pedidos de servicio técnico, seguimiento público por ticket, carga de imágenes, autenticación de administradores y persistencia en Firestore.
 
-**Repositorio:** [github.com/jochurru/servicejj2.0backend](https://github.com/jochurru/servicejj2.0backend)
-
----
-
-## Características
-
-- CRUD de pedidos con subida de hasta **5 fotos** por pedido (procesadas con Sharp, almacenadas en Cloudinary).
-- **Doble escritura:** colecciones de pedidos internos y datos públicos de seguimiento.
-- Tickets cortos con prefijo `SJ-` para consulta y QR.
-- **Reclamo de pedidos** por email (vinculación con `clienteId` de Firebase Auth).
-- Seguimiento **público** sin API key (solo datos de estado, no datos sensibles del taller).
-- CORS configurable y middleware de errores centralizado.
-- Autenticación de rutas administrativas mediante header `x-api-key`.
+Forma parte de una solución full-stack compuesta por un frontend en React y una API REST propia.
 
 ---
 
-## Stack tecnológico
+## 🚀 Funcionalidades
 
-| Área        | Tecnología        |
-|------------|-------------------|
-| Runtime    | Node.js           |
-| Framework  | Express 5         |
-| Base datos | Firestore (Admin SDK) |
-| Archivos   | Cloudinary, Multer, Sharp |
-| Seguridad  | API key (alta pública), Firebase Bearer (admin) |
-| Config     | dotenv            |
+- Alta de pedidos de servicio técnico
+- Carga de hasta 5 imágenes por pedido
+- Generación de tickets cortos con formato `SJ-XXXX`
+- Seguimiento público del estado de un pedido
+- Vinculación de pedidos con usuarios autenticados
+- Consulta y administración de pedidos
+- Actualización y eliminación de registros
+- Envío de correos electrónicos
+- Generación de códigos QR
+- Persistencia en Firestore
+- Almacenamiento de imágenes en Cloudinary
 
 ---
 
-## Arquitectura
+## 🛠️ Stack tecnológico
 
-El código sigue una estructura en capas:
+![Node.js](https://img.shields.io/badge/-Node.js-339933?style=flat&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/-Express-000000?style=flat&logo=express&logoColor=white)
+![Firebase](https://img.shields.io/badge/-Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)
+![Cloudinary](https://img.shields.io/badge/-Cloudinary-3448C5?style=flat&logo=cloudinary&logoColor=white)
 
-```
-index.js                 # Punto de entrada: carga .env y levanta el servidor
+- Node.js
+- Express 5
+- Firebase Admin
+- Firestore
+- Cloudinary
+- Multer
+- Sharp
+- Nodemailer
+- QRCode
+- dotenv
+- CORS
+
+---
+
+## 🧱 Arquitectura
+
+El backend está organizado en capas para separar responsabilidades y facilitar el mantenimiento y la evolución del proyecto.
+
+```text
+index.js
 src/
-├── app.js               # Factory Express: CORS, JSON, rate limit, rutas
-├── routes/              # Definición de endpoints
-├── controllers/         # HTTP → servicios
-├── services/            # Lógica de negocio
-├── repositories/        # Acceso a Firestore
-├── domain/              # Entidades, generación de IDs, errores
-├── dto/                 # Parseo y normalización de entrada
-├── middleware/          # API key, upload, manejo de errores
-├── storage/             # Adaptador Cloudinary
-└── config/              # Firebase Admin y Cloudinary
+├── app.js
+├── config/
+├── controllers/
+├── domain/
+├── dto/
+├── middleware/
+├── repositories/
+├── routes/
+├── services/
+└── storage/
+
+Responsabilidades principales
+- routes/: definición de endpoints
+- controllers/: manejo de requests y responses
+- services/: lógica de negocio
+- repositories/: acceso a Firestore
+- domain/: entidades y reglas del dominio
+- dto/: validación y normalización de datos
+- middleware/: autenticación, autorización y manejo de errores
+- storage/: integración con Cloudinary
+- config/: configuración de Firebase y servicios externos
 ```
+🔐Seguridad y acceso
+El backend utiliza distintos niveles de acceso según el tipo de operación.
+Endpoints públicos
+- Seguimiento de pedidos por ticket
+- Reclamo o vinculación de pedidos
+Creación de pedidos
+La creación de pedidos utiliza una API key enviada mediante el header:
+x-api-key
+Administración
+Las operaciones administrativas requieren:
+- autenticación mediante Firebase Auth
+- token Bearer válido
+- usuario registrado en Firestore
+- rol admin
+Esto se aplica a operaciones como:
+- listar pedidos
+- buscar pedidos por ticket
+- actualizar pedidos
+- eliminar pedidos
+🌐 API principal
+Base path:
+/api/pedidos
+Endpoints
+Método	Ruta	Acceso	Descripción
+GET	/seguimiento/:idCorto	Público	Consulta el estado de un pedido
+POST	/reclamar	Público	Vincula pedidos con un usuario
+POST	/	API key	Crea un nuevo pedido
+GET	/ticket/:idCorto	Admin	Busca un pedido por ticket
+GET	/	Admin	Lista pedidos
+PUT	/:id	Admin	Actualiza un pedido
+DELETE	/:id	Admin	Elimina un pedido
 
----
 
-## Requisitos previos
-
-- Node.js 18+
-- Proyecto Firebase con **Firestore** y cuenta de servicio (service account)
-- Cuenta **Cloudinary** con API key y secret
-- Frontend o cliente HTTP para probar (por defecto CORS permite `http://localhost:5173`)
-
----
-
-## Instalación
-
-```bash
-git clone https://github.com/jochurru/servicejj2.0backend.git
-cd servicejj2.0backend
+🖼️ Gestión de imágenes
+Los pedidos pueden incluir hasta 5 imágenes.
+El flujo utiliza:
+- Multer para recepción de archivos
+- Sharp para procesamiento de imágenes
+- Cloudinary para almacenamiento
+🔥 Persistencia
+La aplicación utiliza Firestore mediante Firebase Admin SDK.
+El acceso a datos está separado mediante repositories, manteniendo la lógica de negocio desacoplada de la base de datos.
+▶️ Ejecución local
+1. Instalar dependencias
 npm install
-```
-
-### Variables de entorno
-
-Creá `.env` en la raíz (no se commitea):
-
-```env
+2. Crear archivo .env
+Tomar como referencia el archivo:
+.env.example
+Variables principales:
 PORT=5000
 
-# Debe coincidir con VITE_SERVICE_JJ_API_KEY del frontend
-API_KEY_SECRET=tu_clave_secreta_larga
+API_KEY_SECRET=
 
-# Origen del frontend (opcional; por defecto localhost:5173)
-CORS_ORIGIN=http://localhost:5173
+CORS_ORIGIN=
 
-# Firebase Admin (JSON de cuenta de servicio → variables)
 FB_PROJECT_ID=
 FB_CLIENT_EMAIL=
-FB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FB_PRIVATE_KEY=
 
-# Cloudinary
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
-```
 
-**`FB_PRIVATE_KEY`:** en el `.env` usá comillas y `\n` literales para los saltos de línea, o pegá la clave en una sola línea; el código reemplaza `\\n` por saltos reales.
-
-### Ejecución
-
-```bash
+3. Ejecutar el proyecto
 npm run dev
-# o
+o
 npm start
-```
+🔗 Proyecto relacionado
+Frontend:
+https://github.com/jochurru/servicejj2.0
+Aplicación:
+https://servicejj.com.ar/
+📌 Estado del proyecto
+Proyecto funcional en evolución.
+El objetivo del backend es centralizar la gestión de pedidos de servicio técnico, mejorar la trazabilidad de cada equipo y ofrecer seguimiento tanto para clientes como para administradores.
+👨‍💻 Autor
+Jonatan Churruarin
+LinkedIn:
+https://www.linkedin.com/in/jonatan-churruarin/
 
-Servidor por defecto: [http://localhost:5000](http://localhost:5000)  
-Health check: `GET /` → texto de confirmación.
-
----
-
-## Scripts disponibles
-
-| Comando        | Descripción              |
-|---------------|--------------------------|
-| `npm start`   | Inicia el servidor       |
-| `npm run dev` | Igual que `start`        |
-
----
-
-## API — Pedidos
-
-Base path: **`/api/pedidos`**
-
-Todas las rutas bajo `/api/` tienen **rate limit**: 20 solicitudes por IP cada 15 minutos.
-
-### Endpoints públicos
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/seguimiento/:idCorto` | Estado público del ticket (`SJ-XXXX` o solo número) |
-| `POST` | `/reclamar` | Vincula pedidos al usuario por email / `clienteId` |
-
-**Body `POST /reclamar` (JSON):**
-
-```json
-{
-  "email": "cliente@ejemplo.com",
-  "clienteId": "uid-firebase-opcional"
-}
-```
-
-El email se guarda en minúsculas.
-
-### Endpoints protegidos (header `x-api-key`)
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/` | Lista todos los pedidos |
-| `GET` | `/ticket/:idCorto` | Busca un pedido por ticket |
-| `POST` | `/` | Crea pedido (`multipart/form-data`) |
-| `PUT` | `/:id` | Actualiza pedido (JSON) |
-| `DELETE` | `/:id` | Elimina pedido |
-
-**Header requerido:**
-
-```
-x-api-key: <API_KEY_SECRET>
-```
-
-**`POST /` — campos del formulario:**
-
-| Campo       | Tipo   | Descripción              |
-|------------|--------|--------------------------|
-| `nombre`   | string | Cliente                  |
-| `equipo`   | string | Tipo de equipo           |
-| `modelo`   | string | Opcional                 |
-| `falla`    | string | Descripción del problema |
-| `telefono` | string | Contacto                 |
-| `email`    | string | Se normaliza a minúsculas |
-| `clienteId`| string | UID Firebase si ya está logueado |
-| `fotos`    | file[] | Hasta 5 imágenes         |
-
-**Respuesta creación (201):**
-
-```json
-{
-  "success": true,
-  "id": "firestore-doc-id",
-  "idCorto": "SJ-1234",
-  "mensaje": "..."
-}
-```
-
-**`PUT /:id` — ejemplo de body (JSON):** estado, notas internas, datos de seguimiento según lo definido en `update-pedido.dto.js`.
-
----
-
-## Seguridad
-
-- Rutas de administración exigen `x-api-key` igual a `API_KEY_SECRET`.
-- Seguimiento y reclamo no usan API key; no exponen datos internos del taller.
-- CORS restringido al origen del frontend (`CORS_ORIGIN` o localhost por defecto).
-- Límite de tamaño JSON: 50 KB.
-
----
-
-## Firestore (referencia)
-
-El backend usa colecciones gestionadas desde `repositories/` (pedidos completos y documentos de seguimiento público). Los nombres exactos y el esquema de campos están definidos en:
-
-- `src/repositories/pedidos.repository.js`
-- `src/repositories/seguimiento.repository.js`
-- `src/domain/pedido.entity.js` / `seguimiento.entity.js`
-
-Alineá las **reglas de seguridad** de Firestore en la consola Firebase con el modelo de acceso del frontend (Auth + rol `admin` en `usuarios/{uid}`).
-
----
-
-## Despliegue
-
-1. Configurá todas las variables de entorno en el hosting (Railway, Render, Cloud Run, VPS, etc.).
-2. Ajustá `CORS_ORIGIN` al dominio del frontend en producción.
-3. Usá HTTPS en producción; el frontend debe apuntar `VITE_API_URL` a `https://tu-api.com/api`.
-4. Asegurate de que la cuenta de servicio de Firebase tenga permisos de lectura/escritura en Firestore.
-
----
-
-## Enlaces relacionados
-
-- **Frontend:** [servicejj2.0](https://github.com/jochurru/servicejj2.0)
-- Express 5: [expressjs.com](https://expressjs.com/)
-- Firebase Admin: [firebase.google.com/docs/admin/setup](https://firebase.google.com/docs/admin/setup)
-- Cloudinary Node SDK: [cloudinary.com/documentation/node_integration](https://cloudinary.com/documentation/node_integration)
