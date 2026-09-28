@@ -73,6 +73,7 @@ Responsabilidades principales
 - config/: configuración de Firebase y servicios externos
 ```
 🔐Seguridad y acceso
+
 El backend utiliza distintos niveles de acceso según el tipo de operación.
 Endpoints públicos
 - Seguimiento de pedidos por ticket
@@ -91,7 +92,9 @@ Esto se aplica a operaciones como:
 - buscar pedidos por ticket
 - actualizar pedidos
 - eliminar pedidos
+
 🌐 API principal
+
 Base path:
 /api/pedidos
 Endpoints
@@ -106,6 +109,7 @@ DELETE	/:id	Admin	Elimina un pedido
 
 
 🖼️ Gestión de imágenes
+
 Los pedidos pueden incluir hasta 5 imágenes.
 El flujo utiliza:
 - Multer para recepción de archivos
